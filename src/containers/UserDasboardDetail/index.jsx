@@ -16,6 +16,11 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 
+import axios from 'axios';
+
+
+const API_KEY = 'n4c6zKxqZ9PANO3eAJgOnRY1O3w8j498evDpDnGmLC7u2JAhkGg79hhikVJY54H1';
+
 
 
 const CardView = ({ title, value, unit }) => {
@@ -42,8 +47,6 @@ const CardView = ({ title, value, unit }) => {
     </Card>
   );
 };
-
-
 
 
 
@@ -78,17 +81,6 @@ const UserDasboardDetail = () => {
 // Lấy tháng từ đối tượng ngày
 const currentMonth = currentDate.getMonth() + 1;
 
-
-  const [valueElectric, setValueElectric] = useState(Math.random());
-
-  // useEffect(() => {
-  //   const intervalId = setInterval(() => {
-  //     setValueElectric(Math.random());
-  //   }, 5000);
-
-  //   return () => clearInterval(intervalId);
-  // }, []);
-
   const [idRoom, setIdRoom] = useState("");
 
   const user = useSelector(state => state.user);
@@ -100,12 +92,6 @@ const currentMonth = currentDate.getMonth() + 1;
     }
   }, [currentUser]);
 
-  // get 
-  
-  // const [electric, setElectric] = useState(0); 
-  // const [volt, setVolt] = useState(0); 
-  // const [power, setPower] = useState(0); 
-  // const [energy, setEnergy] = useState(0);
 
   const [roomData, setRoomData] = useState({
     electric: 0,
@@ -113,26 +99,6 @@ const currentMonth = currentDate.getMonth() + 1;
     power: 0,
     energy: 0,
   });
-
-    
-  // useEffect(() => {
-  //   const fetchRoomData = async () => {
-  //     const roomRef = ref(database, `rooms/${idRoom}`);
-  //     try {
-  //       const snapshot = await get(roomRef);
-  //       if (snapshot.exists()) {
-  //         const data = snapshot.val();
-  //         console.log("dataaaaa", data);
-  //       } else {
-  //         console.log('Room not found');
-  //       }
-  //     } catch (error) {
-  //       console.error('Error fetching room data:', error);
-  //     }
-  //   };
-
-  //   fetchRoomData();
-  // }, [idRoom]);
 
 
   //-----------------------real time--------------------------
@@ -191,6 +157,37 @@ const currentMonth = currentDate.getMonth() + 1;
     //     clearInterval(intervalId);
     //   };
     // }, [idRoom]);
+
+    const findManyFromMongoDB = async () => {
+      try {
+        const endpoint = 'https://ap-southeast-1.aws.data.mongodb-api.com/app/data-rowcm/endpoint/data/v1/action/find';
+        const headers = {
+          'Content-Type': 'application/json',
+          'Access-Control-Request-Headers': '*',
+          'api-key': API_KEY,
+        };
+
+        const requestData = {
+          collection: 'rooms',
+          database: 'test',
+          dataSource: 'Cluster0',
+          // projection: { _id: 658bd94f07779cccb557334e },
+          filter: { device_id: 1}
+        };
+
+        const response = await axios.post(endpoint, requestData, { headers });
+
+        console.log('Response from MongoDB:', response.data);
+      } catch (error) {
+        console.error('Error while fetching data from MongoDB:', error);
+      }
+    };
+    useEffect(() => {
+      
+  
+      // Gọi hàm để thực hiện yêu cầu khi component được mount
+      findManyFromMongoDB();
+    }, [idRoom]);
 
 
   return (
