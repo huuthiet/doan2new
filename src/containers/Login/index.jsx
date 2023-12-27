@@ -69,8 +69,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
   const user = useSelector(state => state.user);
-  console.log("user in login", user);
-  console.log("user in loginnnn", user.currentUser.role);
+  // console.log("user in login", user);
+  // console.log("user in loginnnn", user.currentUser.role);
   console.log("user in loginnnn compart", JSON.stringify(user.currentUser) === '{}');
 
   const dispatch = useDispatch();
