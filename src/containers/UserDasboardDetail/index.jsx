@@ -17,9 +17,11 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 
 import axios from 'axios';
+// import { MongoClient } from 'mongodb';
+// import mongoose from '../../db';
 
 
-const API_KEY = 'n4c6zKxqZ9PANO3eAJgOnRY1O3w8j498evDpDnGmLC7u2JAhkGg79hhikVJY54H1';
+// const API_KEY = 'n4c6zKxqZ9PANO3eAJgOnRY1O3w8j498evDpDnGmLC7u2JAhkGg79hhikVJY54H1';
 
 
 
@@ -158,37 +160,124 @@ const currentMonth = currentDate.getMonth() + 1;
     //   };
     // }, [idRoom]);
 
-    const findManyFromMongoDB = async () => {
-      try {
-        const endpoint = 'https://ap-southeast-1.aws.data.mongodb-api.com/app/data-rowcm/endpoint/data/v1/action/find';
-        const headers = {
-          'Content-Type': 'application/json',
-          'Access-Control-Request-Headers': '*',
-          'api-key': API_KEY,
-        };
 
-        const requestData = {
-          collection: 'rooms',
-          database: 'test',
-          dataSource: 'Cluster0',
-          // projection: { _id: 658bd94f07779cccb557334e },
-          filter: { device_id: 1}
-        };
 
-        const response = await axios.post(endpoint, requestData, { headers });
+    // const findManyFromMongoDB = async () => {
+    //   try {
+    //     const endpoint = 'https://ap-southeast-1.aws.data.mongodb-api.com/app/data-rowcm/endpoint/data/v1/action/find';
+    //     const headers = {
+    //       'Content-Type': 'application/json',
+    //       'Access-Control-Request-Headers': '*',
+    //       'api-key': API_KEY,
+    //     };
 
-        console.log('Response from MongoDB:', response.data);
-      } catch (error) {
-        console.error('Error while fetching data from MongoDB:', error);
-      }
-    };
-    useEffect(() => {
+    //     const requestData = {
+    //       collection: 'rooms',
+    //       database: 'test',
+    //       dataSource: 'Cluster0',
+    //       // projection: { _id: 658bd94f07779cccb557334e },
+    //       filter: { device_id: 1}
+    //     };
+
+    //     const response = await axios.post(endpoint, requestData, { headers });
+
+    //     console.log('Response from MongoDB:', response.data);
+    //   } catch (error) {
+    //     console.error('Error while fetching data from MongoDB:', error);
+    //   }
+    // };
+    // useEffect(() => {
       
   
-      // Gọi hàm để thực hiện yêu cầu khi component được mount
-      findManyFromMongoDB();
-    }, [idRoom]);
+    //   // Gọi hàm để thực hiện yêu cầu khi component được mount
+    //   findManyFromMongoDB();
+    // }, [idRoom]);
 
+
+    // c1
+    // const [data, setData] = useState([]);
+    // useEffect(() => {
+    //   const fetchData = async () => {
+    //     try {
+    //       // Replace the connection string and database/collection names with your own
+    //       const uri = 'mongodb+srv://lekien2k2:letankien@cluster0.myjs2qo.mongodb.net/test?retryWrites=true&w=majority';
+    //       const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+  
+    //       await client.connect();
+  
+    //       const database = client.db('test');
+    //       const collection = database.collection('rooms');
+  
+    //       // Specify your query conditions here
+    //       const query = { device_id: 1 };
+  
+    //       // Perform the query and convert the result to an array
+    //       const result = await collection.find(query).toArray();
+    //       console.log("result", result);
+  
+    //       setData(result);
+    //     } catch (error) {
+    //       console.error('Error fetching data from MongoDB:', error);
+    //     } 
+    //     // finally {
+    //     //   // Close the MongoDB connection when done
+    //     //   await client.close();
+    //     // }
+    //   };
+  
+    //   fetchData();
+    // }, []);
+    //--------------------------------------------------
+    //c2
+  // const [data, setData] = useState([]);
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       // Thực hiện yêu cầu HTTP để lấy dữ liệu từ API hoặc endpoint của bạn
+  //       const response = await axios.get('test');
+
+  //       // Lưu dữ liệu vào MongoDB bằng Mongoose API
+  //       const collection = mongoose.connection.db.collection('rooms');
+  //       await collection.insertMany(response.data);
+
+  //       // Lấy dữ liệu từ MongoDB bằng Mongoose API
+  //       const result = await collection.find({ device_id: 1 }).toArray();
+
+  //       setData(result);
+  //     } catch (error) {
+  //       console.error('Error fetching data:', error);
+  //     }
+  //   };
+
+  //   fetchData();
+  // }, []);
+
+  const [data, setData] = useState(null);
+
+  const fetchData = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/rooms');
+      setData(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+
+    // Lập lịch gọi API mỗi 1 tiếng
+    const intervalId = setInterval(() => {
+      fetchData();
+    }, 60 * 60 * 1000); // 1 tiếng = 60 phút * 60 giây * 1000 milliseconds
+
+    // Cleanup: clear interval khi component bị unmounted
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
 
   return (
     
