@@ -1,4 +1,5 @@
 import React from 'react';
+import moment from 'moment-timezone';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -22,8 +23,83 @@ ChartJS.register(
     Legend
 );
 
+function generateHourLabels() {
+    const hourLabels = [];
+    for (let i = 0; i <= 23; i ++) {
+      const formattedHour = i.toString().padStart(2, '0');
+      hourLabels.push(`${formattedHour}:00`);
+    }
+    return hourLabels;
+  }
+  function getDayLabelsBetweenDates(start_date, end_date) {
+    // Set the timezone to 'Asia/Ho_Chi_Minh' (Vietnam timezone)
+    moment.tz.setDefault('Asia/Ho_Chi_Minh');
+  
+    const startDay = moment(start_date);
+    const endDay = moment(end_date);
+  
+    // Ensure start_date is before or equal to end_date
+    if (!startDay.isSameOrBefore(endDay)) {
+      throw new Error('start_date must be before or equal to end_date');
+    }
+  
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+    // Create an array of labels for the days from start_date to end_date
+    const weekDayLabels = [];
+    let currentDay = startDay.clone();
+  
+    while (currentDay.isSameOrBefore(endDay)) {
+      const currentIndex = currentDay.day();
+      weekDayLabels.push(dayLabels[currentIndex]);
+      currentDay.add(1, 'day');
+    }
+  
+    return weekDayLabels;
+  }
+
+  function getDaysInCurrentMonth() {
+    // Set the timezone to 'Asia/Ho_Chi_Minh' (Vietnam timezone)
+    moment.tz.setDefault('Asia/Ho_Chi_Minh');
+  
+    const today = moment();
+    const daysInMonth = today.daysInMonth();
+  
+    const dayLabels = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      dayLabels.push(day);
+    }
+  
+    return dayLabels;
+  }
+function getLast12Months() {
+    // Set the timezone to 'Asia/Ho_Chi_Minh' (Vietnam timezone)
+    moment.tz.setDefault('Asia/Ho_Chi_Minh');
+  
+    const today = moment();
+    const last12Months = [];
+  
+    for (let i = 0; i < 12; i++) {
+      const currentMonth = today.clone().subtract(i, 'months');
+      last12Months.push(currentMonth.format('MMMM YYYY'));
+    }
+  
+    return last12Months.reverse();
+  }
+const hourLabels = generateHourLabels();
+console.log("hourLabels", hourLabels);
+const dayOfWeekCurrentLabels = getDayLabelsBetweenDates('2023-12-22', '2023-12-28');
+const dayOfMonthCurrentLabels = getDaysInCurrentMonth();
+const monthOfYearCurrentLabels = getLast12Months();
+
+
+
 const LineChart = () => {
-    const labels = ['T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2']
+    const labels = ['T7', 'T4', 'T5', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 
+                            'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2',
+                            'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 
+                            'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T3', 'T4', 'T6', 'T7', 'T9']
+
     const data = {
     labels: labels,
     datasets: [{

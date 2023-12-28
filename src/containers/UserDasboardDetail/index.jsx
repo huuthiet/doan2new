@@ -15,14 +15,9 @@ import PaperWrapper from '../../components/PaperWrapper';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 
 import axios from 'axios';
-// import { MongoClient } from 'mongodb';
-// import mongoose from '../../db';
-
-
-// const API_KEY = 'n4c6zKxqZ9PANO3eAJgOnRY1O3w8j498evDpDnGmLC7u2JAhkGg79hhikVJY54H1';
-
 
 
 const CardView = ({ title, value, unit }) => {
@@ -54,45 +49,49 @@ const CardView = ({ title, value, unit }) => {
 
 const UserDasboardDetail = () => {
   const currentDate = new Date();
-  
 
-  const [startDate, setStartDate] = useState(dayjs('2023-01-07').format('YYYY-MM-DD'));
+  // Lấy tháng từ đối tượng ngày
+  const currentMonth = currentDate.getMonth() + 1;
+
+  //Thông tin user
+  const user = useSelector(state => state.user);
+  const {currentUser} = user;
+  const [idRoom, setIdRoom] = useState(currentUser.idroom);
+  // Nếu thay đổi user thì cập lại id room
+  useEffect(() => {
+    if (currentUser) {
+      setIdRoom(currentUser.idroom);
+    }
+  }, [currentUser]);
+  //--------------------
+
+  // set ngày bắt đầu và kết thúc để lọc dư liệu
+  const [startDate, setStartDate] = useState(dayjs().startOf('month').format('YYYY-MM-DD'));
   const [endDate, setEndDate] 
     = useState(dayjs(`${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`)
     .format('YYYY-MM-DD'));
+  // ngày bắt đầu và kế thúc để hiển thị, chưa lọc
+  const [startDateDisplay, setStartDateDisplay] =  useState(startDate);
+  const [endDateDisplay, setEndDateDisplay] =  useState(endDate);
 
-  const handleStartDateChange = (event) => {
+  const handleStartDateDisplayChange = (event) => {
     const newDate = event.target.value;
 
-    setStartDate(newDate);
-    //THỰC HIỆN SORT DỮ LIỆU LUÔN VÀ HIỂN THỊ
+    setStartDateDisplay(newDate);
   };
-  const handleEndDateChange = (event) => {
+  const handleEndDateDisplayChange = (event) => {
     const newDate = event.target.value;
 
-    setEndDate(newDate);
-    //THỰC HIỆN SORT DỮ LIỆU LUÔN VÀ HIỂN THỊ
+    setEndDateDisplay(newDate);
   };
 
+  //Thanh lọc cố định
   const [value, setValue] = useState(2); //theo 1 tháng
   const handleChange = (event, newValue) => {
     console.log("newValue", newValue);
     setValue(newValue);
   };
 
-// Lấy tháng từ đối tượng ngày
-const currentMonth = currentDate.getMonth() + 1;
-
-  const [idRoom, setIdRoom] = useState("");
-
-  const user = useSelector(state => state.user);
-  const {currentUser} = user;
-
-  useEffect(() => {
-    if (currentUser) {
-      setIdRoom(currentUser.idroom);
-    }
-  }, [currentUser]);
 
 
   const [roomData, setRoomData] = useState({
@@ -101,6 +100,49 @@ const currentMonth = currentDate.getMonth() + 1;
     power: 0,
     energy: 0,
   });
+
+
+function handleButtonFilter() {
+  setStartDate(startDateDisplay);
+  setEndDate(endDateDisplay);
+}
+
+// day to day: MẶC ĐỊNH GỌI
+const [data, setData] = useState(null);
+
+const fetchData = async (idRoom, startDate, endDate) => {
+  console.log("idRoom", idRoom);
+  try {
+    const deviceId = idRoom;
+    // const startDate =startDate;
+    //  '2023-12-28'; 
+    // const endDate = endDate;
+    // '2023-12-28';
+
+    const apiUrl = `http://localhost:3000/rooms/${deviceId}/${startDate}/${endDate}`;
+
+    const response = await axios.get(apiUrl);
+    setData(response.data);
+
+    console.log(response.data);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+};
+
+useEffect(() => {
+  fetchData(idRoom, startDate, endDate);
+
+  const intervalId = setInterval(() => {
+    fetchData(idRoom, startDate, endDate);
+  }, 60 * 60 * 1000);
+
+  return () => {
+    clearInterval(intervalId);
+  };
+}, [startDate, endDate]);
+
+//------------------------------
 
 
   //-----------------------real time--------------------------
@@ -160,149 +202,95 @@ const currentMonth = currentDate.getMonth() + 1;
     //   };
     // }, [idRoom]);
 
+    //----------------------------------------------------------
 
+    
+  // sort all
+  // const [data, setData] = useState(null);
 
-    // const findManyFromMongoDB = async () => {
-    //   try {
-    //     const endpoint = 'https://ap-southeast-1.aws.data.mongodb-api.com/app/data-rowcm/endpoint/data/v1/action/find';
-    //     const headers = {
-    //       'Content-Type': 'application/json',
-    //       'Access-Control-Request-Headers': '*',
-    //       'api-key': API_KEY,
-    //     };
-
-    //     const requestData = {
-    //       collection: 'rooms',
-    //       database: 'test',
-    //       dataSource: 'Cluster0',
-    //       // projection: { _id: 658bd94f07779cccb557334e },
-    //       filter: { device_id: 1}
-    //     };
-
-    //     const response = await axios.post(endpoint, requestData, { headers });
-
-    //     console.log('Response from MongoDB:', response.data);
-    //   } catch (error) {
-    //     console.error('Error while fetching data from MongoDB:', error);
-    //   }
-    // };
-    // useEffect(() => {
-      
-  
-    //   // Gọi hàm để thực hiện yêu cầu khi component được mount
-    //   findManyFromMongoDB();
-    // }, [idRoom]);
-
-
-    // c1
-    // const [data, setData] = useState([]);
-    // useEffect(() => {
-    //   const fetchData = async () => {
-    //     try {
-    //       // Replace the connection string and database/collection names with your own
-    //       const uri = 'mongodb+srv://lekien2k2:letankien@cluster0.myjs2qo.mongodb.net/test?retryWrites=true&w=majority';
-    //       const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-  
-    //       await client.connect();
-  
-    //       const database = client.db('test');
-    //       const collection = database.collection('rooms');
-  
-    //       // Specify your query conditions here
-    //       const query = { device_id: 1 };
-  
-    //       // Perform the query and convert the result to an array
-    //       const result = await collection.find(query).toArray();
-    //       console.log("result", result);
-  
-    //       setData(result);
-    //     } catch (error) {
-    //       console.error('Error fetching data from MongoDB:', error);
-    //     } 
-    //     // finally {
-    //     //   // Close the MongoDB connection when done
-    //     //   await client.close();
-    //     // }
-    //   };
-  
-    //   fetchData();
-    // }, []);
-    //--------------------------------------------------
-    //c2
-  // const [data, setData] = useState([]);
+  // const fetchData = async () => {
+  //   try {
+  //     const response = await axios.get('http://localhost:3000/rooms');
+  //     setData(response.data);
+  //     console.log(response.data);
+  //   } catch (error) {
+  //     console.error('Error fetching data:', error);
+  //   }
+  // };
 
   // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       // Thực hiện yêu cầu HTTP để lấy dữ liệu từ API hoặc endpoint của bạn
-  //       const response = await axios.get('test');
-
-  //       // Lưu dữ liệu vào MongoDB bằng Mongoose API
-  //       const collection = mongoose.connection.db.collection('rooms');
-  //       await collection.insertMany(response.data);
-
-  //       // Lấy dữ liệu từ MongoDB bằng Mongoose API
-  //       const result = await collection.find({ device_id: 1 }).toArray();
-
-  //       setData(result);
-  //     } catch (error) {
-  //       console.error('Error fetching data:', error);
-  //     }
-  //   };
-
   //   fetchData();
+
+  //   // Lập lịch gọi API mỗi 1 tiếng
+  //   const intervalId = setInterval(() => {
+  //     fetchData();
+  //   }, 60 * 60 * 1000); // 1 tiếng = 60 phút * 60 giây * 1000 milliseconds
+
+  //   // Cleanup: clear interval khi component bị unmounted
+  //   return () => {
+  //     clearInterval(intervalId);
+  //   };
   // }, []);
 
-  const [data, setData] = useState(null);
+  // sort theo phòng
+  // const [data, setData] = useState(null);
 
-  const fetchData = async () => {
-    try {
-      const response = await axios.get('http://localhost:3000/rooms');
-      setData(response.data);
-      console.log(response.data);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  };
+  // const fetchData = async (idRoom) => {
+  //   try {
+  //     const url = `http://localhost:3000/rooms/${idRoom}`;
+  //     const response = await axios.get(url);
+  //     setData(response.data);
+  //     console.log(response.data);
+  //   } catch (error) {
+  //     console.error('Error fetching data:', error);
+  //   }
+  // };
 
-  useEffect(() => {
-    fetchData();
+  // useEffect(() => {
+  //   fetchData(2);
 
-    // Lập lịch gọi API mỗi 1 tiếng
-    const intervalId = setInterval(() => {
-      fetchData();
-    }, 60 * 60 * 1000); // 1 tiếng = 60 phút * 60 giây * 1000 milliseconds
+  //   // Lập lịch gọi API mỗi 1 tiếng
+  //   const intervalId = setInterval(() => {
+  //     fetchData(2);
+  //   }, 60 * 60 * 1000); // 1 tiếng = 60 phút * 60 giây * 1000 milliseconds
 
-    // Cleanup: clear interval khi component bị unmounted
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, []);
+  //   // Cleanup: clear interval khi component bị unmounted
+  //   return () => {
+  //     clearInterval(intervalId);
+  //   };
+  // }, []);
+
+  //-------------------------
+  
+
 
   return (
     
     // className='container-fluid'
     <div >
-    <div>DasboardDetail</div>
+    <br/>
     <PaperWrapper>
         <Grid container justifyContent="center">
           <Grid item lg={8} md={8} sm={12} xs={12} 
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div>
+                <div style={{display: 'flex', gap: '10px'}}>
                   <label htmlFor="startdate">Từ ngày: </label>
                   <input 
                     type='date' 
                     id='startdate' 
-                    value={startDate}
-                    onChange={handleStartDateChange} 
+                    value={startDateDisplay}
+                    onChange={handleStartDateDisplayChange} 
                   />
                   <label htmlFor="startdate">Đến ngày: </label>
                   <input 
                     type='date' 
                     id='startdate'
-                    value={endDate}
-                    onChange={handleEndDateChange} 
+                    value={endDateDisplay}
+                    onChange={handleEndDateDisplayChange} 
                   />
+                  <Button onClick={handleButtonFilter} variant="contained" color="primary">
+                    Lọc
+                  </Button>
                 </div>
               </Grid>
 
@@ -327,33 +315,6 @@ const currentMonth = currentDate.getMonth() + 1;
                 </div>
               </Grid>
             </Grid>
-{/* 
-              <Grid container spacing={2} style={{ display: 'flex',  justifyContent: 'center' }}>
-                <Grid item lg={7} md={7} sm={10} xs={11}  style={{ maxWidth: '100%', minHeight: '50vh' }}>
-                    <LineChart />
-                </Grid>
-
-                <Grid item lg={5} md={5} sm={10} xs={11} 
-                  style={{ display: 'flex',  flexDirection: 'column', alignItems: 'center', maxWidth: '100%', height: '400px' }}>
-                    <Grid item container spacing={2}>
-                        <Grid item lg={6} md={6} sm={6} xs={11}>
-                            <CardView title="Dòng điện" value={roomData.electric} unit="" />
-                        </Grid>
-                        <Grid item lg={6} md={6} sm={6} xs={11}>
-                            <CardView title="Điện áp" value={roomData.volt} unit="" />
-                        </Grid>
-                    </Grid>
-
-                    <Grid item container spacing={2}>
-                        <Grid item lg={6} md={6} sm={6} xs={11} >
-                            <CardView title="Công suất" value={roomData.power} unit="" />
-                        </Grid>
-                        <Grid item lg={6} md={6} sm={6} xs={11} >
-                            <CardView title="Năng lượng" value={roomData.en} unit="" />
-                        </Grid>
-                    </Grid>
-                </Grid>
-            </Grid> */}
 
             <Grid container spacing={2} style={{ display: 'flex', justifyContent: 'center' }}>
               <Grid item lg={7} md={7} sm={10} xs={11} style={{ maxWidth: '100%', minHeight: '50vh' }}>

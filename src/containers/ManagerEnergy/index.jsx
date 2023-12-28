@@ -69,7 +69,7 @@ const ManagerEnergy = props => {
         <meta name="description" content="Description of Energy" />
       </Helmet> */}
       <Grid lg={10} container spacing={2}>
-        <Grid item lg={3} md={4} sm={6} xs={12}>
+        {/* <Grid item lg={3} md={4} sm={6} xs={12}>
           <Card sx={{ maxWidth: 345 }}>
             <CardMedia
               component="img"
@@ -91,7 +91,7 @@ const ManagerEnergy = props => {
               </Link>
             </CardActions>
           </Card>
-        </Grid>
+        </Grid> */}
 
         {roomList.map((room) => (
           <>
