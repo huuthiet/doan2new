@@ -4,7 +4,8 @@ import express from 'express';
 import cors from 'cors';
 import process from 'process';
 import dotenv from 'dotenv';
-import { time } from 'console';
+// import moment from 'moment-timezone';
+import moment from 'moment';
 
 dotenv.config();
 // const uri = process.env.MONGODB;
@@ -90,52 +91,72 @@ app.get('/rooms_5minutes/:device_id/:start_date/:end_date', async (req, res) => 
 });
 
 
-// một ngày, khoảng thời gian 1 tiếng, lấy ở cuối
-// app.get('/rooms_1hour/:device_id/:start_date/:end_date', async (req, res) => {
-//     const deviceId = req.params.device_id;
-//     const startDate = req.params.start_date;
-//     const endDate = req.params.end_date;
+//  ngày hiện tại, khoảng thời gian 1 tiếng, lấy ở cuối
+app.get('/rooms_1hour/:device_id', async (req, res) => {
+    const deviceId = req.params.device_id;
 
-//     const startOfDay = new Date(`${startDate}T00:00:00Z`); // Bắt đầu từ 00h00
-//     const endOfDay = new Date(`${endDate}T23:59:59Z`); // Kết thúc lúc 23h59
+    var currentDate = new Date();
 
-//     const intervalHours = 1;
-//     const resultArray = []; // Mảng để lưu kết quả truy vấn
+    // Xác định múi giờ cho Việt Nam
+    var vietnamTimeZone = 'Asia/Ho_Chi_Minh';
 
-//     try {
-//         // Lặp qua từng khoảng thời gian mỗi 1 giờ
-//         for (let currentTime = new Date(startOfDay); currentTime <= endOfDay; currentTime.setHours(currentTime.getHours() + intervalHours)) {
-//             const startOfInterval = new Date(currentTime);
-//             const endOfInterval = new Date(currentTime);
+    // Chuyển đổi múi giờ
+    var options = { timeZone: vietnamTimeZone, year: 'numeric', month: '2-digit', day: '2-digit' };
+    var formatter = new Intl.DateTimeFormat('en-US', options);
+
+    // Lấy mảng chứa ngày, tháng, năm
+    var dateArray = formatter.formatToParts(currentDate).map(part => part.value);
+
+    // Xây dựng chuỗi theo định dạng năm-tháng-ngày
+    var formattedDate = `${dateArray[4]}-${dateArray[0]}-${dateArray[2]}`;
+
+
+    console.log("formattedDate", formattedDate);
+
+    const startOfDay = new Date(`${formattedDate}T00:00:00Z`); // Bắt đầu từ 00h00
+    const endOfDay = new Date(`${formattedDate}T23:59:59Z`); // Kết thúc lúc 23h59
+
+    const intervalHours = 1;
+    const resultArray = []; 
+
+    try {
+        // Lặp qua từng khoảng thời gian mỗi 1 giờ
+        for (let currentTime = new Date(startOfDay); currentTime <= endOfDay; currentTime.setHours(currentTime.getHours() + intervalHours)) {
+            const startOfInterval = new Date(currentTime);
+            const endOfInterval = new Date(currentTime);
             
-//             // Kiểm tra nếu là khoảng cuối cùng (24h00), đặt thời điểm kết thúc là 23h59:59
-//             if (currentTime.getHours() === 23) {
-//                 endOfInterval.setHours(23, 59, 59);
-//             } else {
-//                 endOfInterval.setHours(endOfInterval.getHours() + intervalHours); // Không trừ 1 giờ để kết thúc vào phút đầu tiên của giờ tiếp theo
-//             }
+            // Kiểm tra nếu là khoảng cuối cùng (24h00), đặt thời điểm kết thúc là 23h59:59
+            if (currentTime.getHours() === 23) {
+                endOfInterval.setHours(23, 59, 59);
+            } else {
+                endOfInterval.setHours(endOfInterval.getHours() + intervalHours); // Không trừ 1 giờ để kết thúc vào phút đầu tiên của giờ tiếp theo
+            }
 
-//             const startOfInterval1 = startOfInterval.toISOString().replace(/\.\d{3}Z$/, 'Z');
-//             const endOfInterval1 = endOfInterval.toISOString().replace(/\.\d{3}Z$/, 'Z');
+            const startOfInterval1 = startOfInterval.toISOString().replace(/\.\d{3}Z$/, 'Z');
+            const endOfInterval1 = endOfInterval.toISOString().replace(/\.\d{3}Z$/, 'Z');
 
-//             const query = { device_id: deviceId, time: { $gte: startOfInterval1, $lt: endOfInterval1 } };
-//             const rooms = await mongoose.connection.db.collection('rooms').find(query).sort({ $natural: -1 }).limit(1).toArray();
+            const query = { device_id: deviceId, time: { $gte: startOfInterval1, $lt: endOfInterval1 } };
+            const rooms = await mongoose.connection.db.collection('rooms').find(query).sort({ $natural: -1 }).limit(1).toArray();
 
-//             // Kiểm tra nếu không tìm thấy giá trị thì đẩy null vào mảng
-//             if (rooms.length > 0) {
-//                 resultArray.push(rooms[0]);
-//             } else {
-//                 resultArray.push(null);
-//             }
-//         }
+            // Kiểm tra nếu không tìm thấy giá trị thì đẩy null vào mảng
+            if (rooms.length > 0) {
+                resultArray.push(rooms[0]);
+            } else {
+                resultArray.push(null);
+            }
+        }
 
-//         res.header('Access-Control-Allow-Origin', '*');
-//         res.json(resultArray);
-//     } catch (error) {
-//         res.status(500).json({ error: error.message });
-//     }
-// });
+        res.header('Access-Control-Allow-Origin', '*');
+        res.json(resultArray);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
+
+
+
+// ngày tới ngày, lấy theo giờ
 app.get('/rooms_1hour/:device_id/:start_date/:end_date', async (req, res) => {
     const deviceId = req.params.device_id;
     const startDate = req.params.start_date;
