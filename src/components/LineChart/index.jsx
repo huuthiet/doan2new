@@ -25,8 +25,11 @@ ChartJS.register(
 
 function generateHourLabels() {
     const hourLabels = [];
-    for (let i = 0; i <= 23; i ++) {
-      const formattedHour = i.toString().padStart(2, '0');
+    for (let i = 1; i <= 24; i ++) {
+      let formattedHour = i.toString().padStart(2, '0');
+      if (formattedHour === '24') {
+        formattedHour = '00';
+      }
       hourLabels.push(`${formattedHour}:00`);
     }
     return hourLabels;
@@ -87,24 +90,35 @@ function getLast12Months() {
     return last12Months.reverse();
   }
 const hourLabels = generateHourLabels();
-console.log("hourLabels", hourLabels);
+
 const dayOfWeekCurrentLabels = getDayLabelsBetweenDates('2023-12-22', '2023-12-28');
+// console.log("dayOfWeekCurrentLabels", dayOfWeekCurrentLabels);
 const dayOfMonthCurrentLabels = getDaysInCurrentMonth();
+console.log("dayOfMonthCurrentLabels", dayOfMonthCurrentLabels);
 const monthOfYearCurrentLabels = getLast12Months();
 
 
 
-const LineChart = () => {
-    const labels = ['T7', 'T4', 'T5', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 
-                            'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2',
-                            'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 
-                            'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T3', 'T4', 'T6', 'T7', 'T9']
+const LineChart = ({externalData, timeRange} ) => {
+  let labels = dayOfMonthCurrentLabels;
+  if (timeRange === 3) {
+    labels = dayOfMonthCurrentLabels;
+  }
+  console.log("timeRange", timeRange);
+  console.log("externalData", externalData);
+  const dataTest = externalData.map(item => (item !== null ? item.energy : null));
+  console.log("dataTest", dataTest);
+    // const labels = ['T7', 'T4', 'T5', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 
+    //                         'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2',
+    //                         'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 
+    //                         'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T3', 'T4', 'T6', 'T7', 'T9']
 
     const data = {
     labels: labels,
     datasets: [{
         label: 'My First Dataset',
-        data: [65, 59, 80, 81, 56, 55, 40],
+        // data: [65, 59, 80 - null, null, null, 55, 40],
+        data: dataTest,
         fill: false,
         borderColor: 'rgb(75, 192, 192)',
         tension: 0.1

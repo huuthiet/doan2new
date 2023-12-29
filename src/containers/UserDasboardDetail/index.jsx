@@ -86,10 +86,27 @@ const UserDasboardDetail = () => {
   };
 
   //Thanh lọc cố định
-  const [value, setValue] = useState(2); //theo 1 tháng
-  const handleChange = (event, newValue) => {
-    console.log("newValue", newValue);
+  const [value, setValue] = useState(2); //theo 1 tháng -> Cái này đại diện cho tab, cần thêm 1 giá trị bản sao
+  // để khi tùy chọn khoảng ngày ở nút Lọc thì set giá trị
+  //TẠM THỜI ĐANG GẶP VẤN ĐỀ KHI  SET ĐỒNG THỜI CẢ value lẫn rangTime, sử dụng tạm value, chưa
+  //đụng tới lọc -> XEM ẢNH problem
+
+  // NẾU ĐANG Ở 5, KHÔNG THUỘC TAB NÀO MÀ THUỘC TUY CHỌN, ĐƯỢC LƯU TRONG STATE KHI RELOAD 
+  // LẠI KHÔNG MẤT THÌ CẦN SET UP LẠI MẶC ĐỊNH -> chưa làm tính năng này
+  const [rangeTime, setRangeTime] = useState(value);
+
+  const handleChangeTime = (event, newValue) => {
+    
     setValue(newValue);
+    // setRangeTime(newValue);
+    // console.log("value", value);
+    // timeRange:
+    // 0: ngày
+    // 1: tuần
+    // 2: tháng: MẶC ĐỊNH
+    // 3: năm
+    // 4: tất cả
+    // 5: Tùy chọn -> chọn khoảng thời gian
   };
 
 
@@ -105,24 +122,52 @@ const UserDasboardDetail = () => {
 function handleButtonFilter() {
   setStartDate(startDateDisplay);
   setEndDate(endDateDisplay);
+  // setRangeTime(5); //chọn khoảng thời gian
+  // console.log("rangeTime", rangeTime);
 }
 
 // day to day: MẶC ĐỊNH GỌI
-const [data, setData] = useState(null);
+const [dataLineChart, setDataLineChart] = useState([]);
 
-const fetchData = async (idRoom, startDate, endDate) => {
+const fetchData = async (idRoom, startDate, endDate, value) => {
   console.log("idRoom", idRoom);
+
+  const deviceId = idRoom
+
+  //MẶC ĐỊNH TRONG THÁNG
+  let apiUrl = `http://localhost:3000/rooms_1day/${deviceId}/${currentMonth}`;  
+
+  if (value === 0) {
+    //ngày
+   apiUrl = `http://localhost:3000/rooms_1hour/${deviceId}/${startDate}/${endDate}`;  
+  } else if (value === 1) {
+    //tuần
+   apiUrl = `http://localhost:3000/rooms_1day_week/${deviceId}`;  
+  } else if (value === 2) {
+    //tháng
+   apiUrl = `http://localhost:3000/rooms_1day/${deviceId}/${currentMonth}`;  
+  } else if (value === 3) {
+    //năm
+   apiUrl = `http://localhost:3000/rooms_1mon_year/${deviceId}`;  
+  } else if (value === 4) {
+    //tất cả -> CHƯA LÀM
+    apiUrl = `http://localhost:3000/rooms_1day/${deviceId}/${currentMonth}`;  
+  } else {
+    // lấy trong tháng
+    apiUrl = `http://localhost:3000/rooms_1day/${deviceId}/${currentMonth}`;  
+  }
+
   try {
-    const deviceId = idRoom;
+    
     // const startDate =startDate;
     //  '2023-12-28'; 
     // const endDate = endDate;
     // '2023-12-28';
 
-    const apiUrl = `http://localhost:3000/rooms/${deviceId}/${startDate}/${endDate}`;
+    
 
     const response = await axios.get(apiUrl);
-    setData(response.data);
+    setDataLineChart(response.data);
 
     console.log(response.data);
   } catch (error) {
@@ -131,16 +176,16 @@ const fetchData = async (idRoom, startDate, endDate) => {
 };
 
 useEffect(() => {
-  fetchData(idRoom, startDate, endDate);
+  fetchData(idRoom, startDate, endDate, value);
 
   const intervalId = setInterval(() => {
-    fetchData(idRoom, startDate, endDate);
+    fetchData(idRoom, startDate, endDate, value);
   }, 60 * 60 * 1000);
 
   return () => {
     clearInterval(intervalId);
   };
-}, [startDate, endDate]);
+}, [value]);
 
 //------------------------------
 
@@ -299,13 +344,13 @@ useEffect(() => {
                   <Box sx={{ bgcolor: 'background.paper', margin: 0 }}>
                     <Tabs 
                       value={value} 
-                      onChange={handleChange} 
+                      onChange={handleChangeTime} 
                       variant="scrollable"
                       scrollButtons="auto"
                       indicatorColor="primary" 
                       textColor="primary"
                       label="scrollable auto tabs example">
-                      <Tab label="1 Ngày" />
+                      <Tab label="1 Ngày" /> 
                       <Tab label="1 Tuần" />
                       <Tab label="1 Tháng" />
                       <Tab label="1 Năm" />
@@ -318,7 +363,7 @@ useEffect(() => {
 
             <Grid container spacing={2} style={{ display: 'flex', justifyContent: 'center' }}>
               <Grid item lg={7} md={7} sm={10} xs={11} style={{ maxWidth: '100%', minHeight: '50vh' }}>
-                <LineChart/>
+                <LineChart externalData={dataLineChart} timeRange={value}/>
               </Grid>
 
               <Grid
