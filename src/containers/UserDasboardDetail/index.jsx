@@ -49,6 +49,7 @@ const CardView = ({ title, value, unit }) => {
 
 const UserDasboardDetail = () => {
   const currentDate = new Date();
+  const [showAlert, setShowAlert] = useState(false);
 
   // Lấy tháng từ đối tượng ngày
   const currentMonth = currentDate.getMonth() + 1;
@@ -98,7 +99,7 @@ const UserDasboardDetail = () => {
   const handleChangeTime = (event, newValue) => {
     
     setValue(newValue);
-    // setRangeTime(newValue);
+    setRangeTime(newValue);
     // console.log("value", value);
     // timeRange:
     // 0: ngày
@@ -120,52 +121,55 @@ const UserDasboardDetail = () => {
 
 
 function handleButtonFilter() {
-  setStartDate(startDateDisplay);
-  setEndDate(endDateDisplay);
-  // setRangeTime(5); //chọn khoảng thời gian
+  if (endDateDisplay < startDateDisplay) {
+    setShowAlert(true);
+  } else {
+    // setStartDate(startDateDisplay);
+    // setEndDate(endDateDisplay);
+    // setRangeTime(5); 
+    setShowAlert(false);
+  }
+  //chọn khoảng thời gian
   // console.log("rangeTime", rangeTime);
 }
 
 // day to day: MẶC ĐỊNH GỌI
 const [dataLineChart, setDataLineChart] = useState([]);
 
-const fetchData = async (idRoom, startDate, endDate, value) => {
+const fetchData = async (idRoom, startDate, endDate, rangeTime) => {
   console.log("idRoom", idRoom);
 
   const deviceId = idRoom
 
   //MẶC ĐỊNH TRONG THÁNG
+  // const apiUrl = `http://localhost:3000/rooms_1hour/${deviceId}}`; 
+
   let apiUrl = `http://localhost:3000/rooms_1day/${deviceId}/${currentMonth}`;  
 
-  if (value === 0) {
+  if (rangeTime === 0) {
     //ngày
-   apiUrl = `http://localhost:3000/rooms_1hour/${deviceId}/${startDate}/${endDate}`;  
-  } else if (value === 1) {
+   apiUrl = `http://localhost:3000/rooms_1hour/${deviceId}`;  
+  } else if (rangeTime === 1) {
     //tuần
    apiUrl = `http://localhost:3000/rooms_1day_week/${deviceId}`;  
-  } else if (value === 2) {
+  } else if (rangeTime === 2) {
     //tháng
    apiUrl = `http://localhost:3000/rooms_1day/${deviceId}/${currentMonth}`;  
-  } else if (value === 3) {
+  } else if (rangeTime === 3) {
     //năm
    apiUrl = `http://localhost:3000/rooms_1mon_year/${deviceId}`;  
-  } else if (value === 4) {
+  } else if (rangeTime === 4) {
     //tất cả -> CHƯA LÀM
     apiUrl = `http://localhost:3000/rooms_1day/${deviceId}/${currentMonth}`;  
-  } else {
+  // } else if (rangeTime === 5) {
+  //   //ngày tới ngày
+  //   apiUrl = `http://localhost:3000/rooms_day_to_day/${deviceId}/${startDate}/${endDate}`;  
+  // } else {
     // lấy trong tháng
     apiUrl = `http://localhost:3000/rooms_1day/${deviceId}/${currentMonth}`;  
   }
 
   try {
-    
-    // const startDate =startDate;
-    //  '2023-12-28'; 
-    // const endDate = endDate;
-    // '2023-12-28';
-
-    
-
     const response = await axios.get(apiUrl);
     setDataLineChart(response.data);
 
@@ -176,16 +180,16 @@ const fetchData = async (idRoom, startDate, endDate, value) => {
 };
 
 useEffect(() => {
-  fetchData(idRoom, startDate, endDate, value);
+  fetchData(idRoom, startDate, endDate, rangeTime);
 
   const intervalId = setInterval(() => {
-    fetchData(idRoom, startDate, endDate, value);
+    fetchData(idRoom, startDate, endDate, rangeTime);
   }, 60 * 60 * 1000);
 
   return () => {
     clearInterval(intervalId);
   };
-}, [value]);
+}, [rangeTime]);
 
 //------------------------------
 
@@ -198,7 +202,6 @@ useEffect(() => {
       if (snapshot.exists()) {
         const data = snapshot.val();
         setRoomData(data);
-        console.log("dataaa", data);
       } else {
         console.log('Room not found');
       }
@@ -316,28 +319,34 @@ useEffect(() => {
     <br/>
     <PaperWrapper>
         <Grid container justifyContent="center">
-          <Grid item lg={8} md={8} sm={12} xs={12} 
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{display: 'flex', gap: '10px'}}>
-                  <label htmlFor="startdate">Từ ngày: </label>
-                  <input 
-                    type='date' 
-                    id='startdate' 
-                    value={startDateDisplay}
-                    onChange={handleStartDateDisplayChange} 
-                  />
-                  <label htmlFor="startdate">Đến ngày: </label>
-                  <input 
-                    type='date' 
-                    id='startdate'
-                    value={endDateDisplay}
-                    onChange={handleEndDateDisplayChange} 
-                  />
-                  <Button onClick={handleButtonFilter} variant="contained" color="primary">
-                    Lọc
-                  </Button>
-                </div>
-              </Grid>
+          <Grid item lg={8} md={8} sm={12} xs={12} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+              <label htmlFor="startdate">Từ ngày: </label>
+              <input
+                type='date'
+                id='startdate'
+                value={startDateDisplay}
+                onChange={handleStartDateDisplayChange}
+                style={{ marginRight: '8px' }} 
+              />
+              <label htmlFor="enddate">Đến ngày: </label>
+              <input
+                type='date'
+                id='enddate'
+                value={endDateDisplay}
+                onChange={handleEndDateDisplayChange}
+                style={{ marginRight: '8px' }}  
+              />
+              <Button onClick={handleButtonFilter} variant="contained" color="primary">
+                Lọc
+              </Button>
+            </div>
+            {showAlert && (
+                  <Alert severity="error">
+                    Vui lòng nhập ngày phía sau lớn hơn ngày trước!
+                  </Alert>
+                )}
+          </Grid>
 
               <Grid item lg={8} md={8} sm={12} xs={12}>
                 <div>
@@ -363,7 +372,7 @@ useEffect(() => {
 
             <Grid container spacing={2} style={{ display: 'flex', justifyContent: 'center' }}>
               <Grid item lg={7} md={7} sm={10} xs={11} style={{ maxWidth: '100%', minHeight: '50vh' }}>
-                <LineChart externalData={dataLineChart} timeRange={value}/>
+                <LineChart externalData={dataLineChart} timeRange={rangeTime}/>
               </Grid>
 
               <Grid

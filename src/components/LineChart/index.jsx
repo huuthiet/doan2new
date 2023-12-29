@@ -101,9 +101,16 @@ const monthOfYearCurrentLabels = getLast12Months();
 
 const LineChart = ({externalData, timeRange} ) => {
   let labels = dayOfMonthCurrentLabels;
-  if (timeRange === 3) {
+  if(timeRange === 0) {
+    labels = hourLabels;
+  } else if (timeRange === 1) {
+    labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  } else if (timeRange === 2) {
     labels = dayOfMonthCurrentLabels;
+  } else if (timeRange === 3) {
+    labels = monthOfYearCurrentLabels;
   }
+  
   console.log("timeRange", timeRange);
   console.log("externalData", externalData);
   const dataTest = externalData.map(item => (item !== null ? item.energy : null));

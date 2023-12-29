@@ -148,10 +148,90 @@ app.get('/rooms_1hour/:device_id', async (req, res) => {
 
         res.header('Access-Control-Allow-Origin', '*');
         res.json(resultArray);
+        console.log(resultArray)
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
+
+
+//test
+app.get('/rooms_1hour_test/:device_id', async (req, res) => {
+    const deviceId = req.params.device_id;
+
+    var currentDate = new Date();
+
+    // Xác định múi giờ cho Việt Nam
+    var vietnamTimeZone = 'Asia/Ho_Chi_Minh';
+
+    // Chuyển đổi múi giờ
+    var options = { timeZone: vietnamTimeZone, year: 'numeric', month: '2-digit', day: '2-digit' };
+    var formatter = new Intl.DateTimeFormat('en-US', options);
+
+    // Lấy mảng chứa ngày, tháng, năm
+    var dateArray = formatter.formatToParts(currentDate).map(part => part.value);
+
+    // Xây dựng chuỗi theo định dạng năm-tháng-ngày
+    var formattedDate = `${dateArray[4]}-${dateArray[0]}-${dateArray[2]}`;
+
+    console.log("formattedDate", formattedDate);
+
+    const startOfDay = new Date(`${formattedDate}T00:00:00Z`); // Bắt đầu từ 00h00
+    const endOfDay = new Date(`${formattedDate}T23:59:59Z`); // Kết thúc lúc 23h59
+
+    const intervalHours = 1;
+    let lastValueBeforeCurrentDate = null;
+    const resultArray = [];
+
+    try {
+        // Lặp qua từng khoảng thời gian mỗi 1 giờ
+        for (let currentTime = new Date(startOfDay); currentTime <= endOfDay; currentTime.setHours(currentTime.getHours() + intervalHours)) {
+            const startOfInterval = new Date(currentTime);
+            const endOfInterval = new Date(currentTime);
+
+            // Kiểm tra nếu là khoảng cuối cùng (24h00), đặt thời điểm kết thúc là 23h59:59
+            if (currentTime.getHours() === 23) {
+                endOfInterval.setHours(23, 59, 59);
+            } else {
+                endOfInterval.setHours(endOfInterval.getHours() + intervalHours); // Không trừ 1 giờ để kết thúc vào phút đầu tiên của giờ tiếp theo
+            }
+
+            const startOfInterval1 = startOfInterval.toISOString().replace(/\.\d{3}Z$/, 'Z');
+            const endOfInterval1 = endOfInterval.toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+            // Lấy giá trị cuối cùng trước thời điểm hiện tại từ các ngày trước đó
+            const queryLastValueBeforeCurrentDate = { device_id: deviceId, time: { $lt: startOfInterval1 } };
+            const lastValueBeforeCurrentDateResult = await mongoose.connection.db.collection('rooms').find(queryLastValueBeforeCurrentDate).sort({ time: -1 }).limit(1).toArray();
+
+            if (lastValueBeforeCurrentDateResult.length > 0 && lastValueBeforeCurrentDate === null) {
+                lastValueBeforeCurrentDate = lastValueBeforeCurrentDateResult[0];
+            }
+
+            // Lấy giá trị cuối cùng trong khoảng thời gian hiện tại
+            const queryCurrentInterval = { device_id: deviceId, time: { $gte: startOfInterval1, $lt: endOfInterval1 } };
+            const roomsCurrentInterval = await mongoose.connection.db.collection('rooms').find(queryCurrentInterval).sort({ time: -1 }).limit(1).toArray();
+
+            // Kiểm tra nếu không tìm thấy giá trị thì đẩy null vào mảng
+            if (roomsCurrentInterval.length > 0) {
+                resultArray.push(roomsCurrentInterval[0]);
+            } else {
+                resultArray.push(null);
+            }
+        }
+
+        const responseObj = {
+            lastValueBeforeCurrentDate: lastValueBeforeCurrentDate,
+            resultArray: resultArray
+        };
+
+        res.header('Access-Control-Allow-Origin', '*');
+        res.json(responseObj);
+        console.log(responseObj);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 
 
@@ -288,11 +368,7 @@ app.get('/rooms_1mon_year/:device_id', async (req, res) => {
     const deviceId = req.params.device_id;
 
     const currentDate = new Date();
-    const startOfYear = new Date(currentDate.getFullYear(), 0, 1); // January 1st of the current year
-    const endOfYear = new Date(currentDate.getFullYear() + 1, 0, 0); // December 31st of the current year
-
-    const intervalHours = 1;
-    const resultArray = []; // Array to store query results
+    const resultArray = []; 
 
     try {
         // Loop through each month of the current year
