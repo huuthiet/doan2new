@@ -53,6 +53,7 @@ const UserDasboardDetail = () => {
 
   // Lấy tháng từ đối tượng ngày
   const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
 
   //Thông tin user
   const user = useSelector(state => state.user);
@@ -144,7 +145,7 @@ const fetchData = async (idRoom, startDate, endDate, rangeTime) => {
   //MẶC ĐỊNH TRONG THÁNG
   // const apiUrl = `http://localhost:3000/rooms_1hour/${deviceId}}`; 
 
-  let apiUrl = `http://localhost:3000/rooms_1day/${deviceId}/${currentMonth}`;  
+  let apiUrl = `http://localhost:3000/rooms_1day_test/${deviceId}/${currentYear}/${currentMonth}`;  
 
   if (rangeTime === 0) {
     //ngày
@@ -154,7 +155,8 @@ const fetchData = async (idRoom, startDate, endDate, rangeTime) => {
    apiUrl = `http://localhost:3000/rooms_1day_week/${deviceId}`;  
   } else if (rangeTime === 2) {
     //tháng
-   apiUrl = `http://localhost:3000/rooms_1day/${deviceId}/${currentMonth}`;  
+   apiUrl = `http://localhost:3000/rooms_1day_test/${deviceId}/${currentYear}/${currentMonth}`;  
+  // apiUrl = `http://localhost:3000/rooms_1day_test/${deviceId}/2024/1`;  
   } else if (rangeTime === 3) {
     //năm
    apiUrl = `http://localhost:3000/rooms_1mon_year/${deviceId}`;  

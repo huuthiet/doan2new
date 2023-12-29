@@ -111,10 +111,39 @@ const LineChart = ({externalData, timeRange} ) => {
     labels = monthOfYearCurrentLabels;
   }
   
-  console.log("timeRange", timeRange);
-  console.log("externalData", externalData);
-  const dataTest = externalData.map(item => (item !== null ? item.energy : null));
-  console.log("dataTest", dataTest);
+  let lastValueBefore = 0;
+  let lastValueArr = [];
+  lastValueArr = externalData.lastValueBeforeCurrentDate;
+  console.log("externalData.lastValueBeforeCurrentDate", lastValueArr);
+
+  if (Array.isArray(lastValueArr) && lastValueArr.length === 0) {
+    lastValueBefore = 0;
+  } else {
+    lastValueBefore = lastValueArr[0].energy;
+  }
+  const initialArr = externalData.resultArray;
+  const energyArr = initialArr.map(item => (item !== null ? item.energy : null));
+
+  let finalEnergyArr = [];
+  for (let i = 0; i < energyArr.length; i++) {
+    if (energyArr[i] === null) {
+      finalEnergyArr.push(null);
+    } else {
+      let result = energyArr[i] - lastValueBefore;
+      finalEnergyArr.push(result);
+      lastValueBefore = energyArr[i];
+    }
+  }
+
+  console.log("finalEnergyArr", finalEnergyArr);
+
+
+  // console.log("timeRange", timeRange);
+  // console.log("externalDataValue", externalData.resultArray);
+  // console.log("externalData", externalData.lastValueBeforeCurrentDate);
+  // console.log("externalData", Array.isArray(externalData.lastValueBeforeCurrentDate) && externalData.lastValueBeforeCurrentDate.length === 0);
+  // console.log("externalDataâ", externalData.lastValueBeforeCurrentDate.length);
+  
     // const labels = ['T7', 'T4', 'T5', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 
     //                         'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2',
     //                         'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 'T1', 'T2', 
@@ -123,9 +152,9 @@ const LineChart = ({externalData, timeRange} ) => {
     const data = {
     labels: labels,
     datasets: [{
-        label: 'My First Dataset',
-        // data: [65, 59, 80 - null, null, null, 55, 40],
-        data: dataTest,
+        label: 'Manager Energy',
+        data: [65, 59, 80 - null, null, null, 55, 40],
+        // data: finalEnergyArr,
         fill: false,
         borderColor: 'rgb(75, 192, 192)',
         tension: 0.1

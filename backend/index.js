@@ -90,8 +90,8 @@ app.get('/rooms_5minutes/:device_id/:start_date/:end_date', async (req, res) => 
     }
 });
 
-
-//  ngày hiện tại, khoảng thời gian 1 tiếng, lấy ở cuối
+//--------------------------------------------------------------------
+// NGÀY HIỆN TẠI, KHOẢNG THỜI GIAN 1 TIẾNG, LẤY Ở CUỐI GIỜ ĐÓ
 app.get('/rooms_1hour/:device_id', async (req, res) => {
     const deviceId = req.params.device_id;
 
@@ -155,7 +155,7 @@ app.get('/rooms_1hour/:device_id', async (req, res) => {
 });
 
 
-//test
+//TEST
 app.get('/rooms_1hour_test/:device_id', async (req, res) => {
     const deviceId = req.params.device_id;
 
@@ -180,7 +180,6 @@ app.get('/rooms_1hour_test/:device_id', async (req, res) => {
     const endOfDay = new Date(`${formattedDate}T23:59:59Z`); // Kết thúc lúc 23h59
 
     const intervalHours = 1;
-    let lastValueBeforeCurrentDate = null;
     const resultArray = [];
 
     try {
@@ -200,12 +199,7 @@ app.get('/rooms_1hour_test/:device_id', async (req, res) => {
             const endOfInterval1 = endOfInterval.toISOString().replace(/\.\d{3}Z$/, 'Z');
 
             // Lấy giá trị cuối cùng trước thời điểm hiện tại từ các ngày trước đó
-            const queryLastValueBeforeCurrentDate = { device_id: deviceId, time: { $lt: startOfInterval1 } };
-            const lastValueBeforeCurrentDateResult = await mongoose.connection.db.collection('rooms').find(queryLastValueBeforeCurrentDate).sort({ time: -1 }).limit(1).toArray();
-
-            if (lastValueBeforeCurrentDateResult.length > 0 && lastValueBeforeCurrentDate === null) {
-                lastValueBeforeCurrentDate = lastValueBeforeCurrentDateResult[0];
-            }
+            
 
             // Lấy giá trị cuối cùng trong khoảng thời gian hiện tại
             const queryCurrentInterval = { device_id: deviceId, time: { $gte: startOfInterval1, $lt: endOfInterval1 } };
@@ -219,8 +213,17 @@ app.get('/rooms_1hour_test/:device_id', async (req, res) => {
             }
         }
 
+        // Lấy giá trị trước ngày đó sớm nhất
+        const startDateGetLastValue = startOfDay.toISOString().replace(/\.\d{3}Z$/, 'Z');
+        const queryLastValueBeforeCurrentDate = { device_id: deviceId, time: { $lt: startDateGetLastValue } };
+        const lastValueBeforeCurrentDateResult = await mongoose.connection.db.collection('rooms')
+                                                                                        .find(queryLastValueBeforeCurrentDate)
+                                                                                        .sort({ time: -1 })
+                                                                                        .limit(1)
+                                                                                        .toArray();
+
         const responseObj = {
-            lastValueBeforeCurrentDate: lastValueBeforeCurrentDate,
+            lastValueBeforeCurrentDate: lastValueBeforeCurrentDateResult,
             resultArray: resultArray
         };
 
@@ -236,7 +239,8 @@ app.get('/rooms_1hour_test/:device_id', async (req, res) => {
 
 
 
-// ngày tới ngày, lấy theo giờ
+//-----------------------------------------------------
+//NGÀY TỚI NGÀY, LẤY THEO GIỜ
 app.get('/rooms_1hour/:device_id/:start_date/:end_date', async (req, res) => {
     const deviceId = req.params.device_id;
     const startDate = req.params.start_date;
@@ -281,20 +285,83 @@ app.get('/rooms_1hour/:device_id/:start_date/:end_date', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
-
-// một tháng, lấy ở cuối ngày
-app.get('/rooms_1day/:device_id/:month', async (req, res) => {
+//TEST
+app.get('/rooms_1hour_test/:device_id/:start_date/:end_date', async (req, res) => {
     const deviceId = req.params.device_id;
+    const startDate = req.params.start_date;
+    const endDate = req.params.end_date;
+
+    const startOfDay = new Date(`${startDate}T00:00:00Z`); // Bắt đầu từ 00h00
+    const endOfDay = new Date(`${endDate}T23:59:59Z`); // Kết thúc lúc 23h59
+
+    const intervalHours = 1;
+    const resultArray = []; // Mảng để lưu kết quả truy vấn
+
+    try {
+        // Lặp qua từng khoảng thời gian mỗi 1 giờ
+        for (let currentTime = new Date(startOfDay); currentTime <= endOfDay; currentTime.setHours(currentTime.getHours() + intervalHours)) {
+            const startOfInterval = new Date(currentTime);
+            const endOfInterval = new Date(currentTime);
+            
+            // Kiểm tra nếu là khoảng cuối cùng (24h00), đặt thời điểm kết thúc là 23h59:59
+            if (currentTime.getHours() === 23) {
+                endOfInterval.setHours(23, 59, 59);
+            } else {
+                endOfInterval.setHours(endOfInterval.getHours() + intervalHours); // Không trừ 1 giờ để kết thúc vào phút đầu tiên của giờ tiếp theo
+            }
+
+            const startOfInterval1 = startOfInterval.toISOString().replace(/\.\d{3}Z$/, 'Z');
+            const endOfInterval1 = endOfInterval.toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+            const query = { device_id: deviceId, time: { $gte: startOfInterval1, $lt: endOfInterval1 } };
+            const rooms = await mongoose.connection.db.collection('rooms').find(query).sort({ $natural: -1 }).limit(1).toArray();
+
+            // Kiểm tra nếu không tìm thấy giá trị thì đẩy null vào mảng
+            if (rooms.length > 0) {
+                resultArray.push(rooms[0]);
+            } else {
+                resultArray.push(null);
+            }
+        }
+        // Lấy giá trị trước ngày đó sớm nhất
+        const startDateGetLastValue = startOfDay.toISOString().replace(/\.\d{3}Z$/, 'Z');
+        const queryLastValueBeforeCurrentDate = { device_id: deviceId, time: { $lt: startDateGetLastValue } };
+        const lastValueBeforeCurrentDateResult = await mongoose.connection.db.collection('rooms')
+                                                                                        .find(queryLastValueBeforeCurrentDate)
+                                                                                        .sort({ time: -1 })
+                                                                                        .limit(1)
+                                                                                        .toArray();
+
+        const responseObj = {
+            lastValueBeforeCurrentDate: lastValueBeforeCurrentDateResult,
+            resultArray: resultArray
+        };
+
+        res.header('Access-Control-Allow-Origin', '*');
+        res.json(responseObj);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+//------------------------------------------------------------
+// MỘT THÁNG, LẤY Ở CUỐI NGÀY
+// 
+app.get('/rooms_1day/:device_id/:year/:month', async (req, res) => {
+    const deviceId = req.params.device_id;
+    const year = parseInt(req.params.year, 10);
     const month = parseInt(req.params.month, 10);
 
-    // Validate the month input
-    if (isNaN(month) || month < 1 || month > 12) {
-        return res.status(400).json({ error: 'Invalid month input. Month should be a number between 1 and 12.' });
+    // Validate the year and month inputs
+    if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+        return res.status(400).json({ error: 'Invalid year or month input.' });
     }
 
-    const startOfMonth = new Date(`2023-${month}-01T00:00:00Z`); // Assuming the year is 2023
-    const endOfMonth = new Date(new Date(startOfMonth).setMonth(startOfMonth.getMonth() + 1) - 1); // Set to last day of the month
+    // Format the month with a leading zero if it's a single digit
+    const formattedMonth = month < 10 ? `0${month}` : month;
+
+    const startOfMonth = new Date(`${year}-${formattedMonth}-01T00:00:00Z`);
+    const endOfMonth = new Date(new Date(startOfMonth).setMonth(startOfMonth.getMonth() + 1) - 1);
 
     const resultArray = []; // Array to store query results
 
@@ -323,23 +390,29 @@ app.get('/rooms_1day/:device_id/:month', async (req, res) => {
     }
 });
 
-//một tuần, lấy cuối ngày: 
-app.get('/rooms_1day_week/:device_id', async (req, res) => {
+
+//TEST
+app.get('/rooms_1day_test/:device_id/:year/:month', async (req, res) => {
     const deviceId = req.params.device_id;
+    const year = parseInt(req.params.year, 10);
+    const month = parseInt(req.params.month, 10);
 
-    const currentDate = new Date();
-    const currentDay = currentDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-    const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDay + (currentDay === 0 ? -6 : 1)); // Adjust to the start of the week (Monday)
+    // Validate the year and month inputs
+    if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+        return res.status(400).json({ error: 'Invalid year or month input.' });
+    }
 
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // Set to the end of the week (Sunday)
+    // Format the month with a leading zero if it's a single digit
+    const formattedMonth = month < 10 ? `0${month}` : month;
+
+    const startOfMonth = new Date(`${year}-${formattedMonth}-01T00:00:00Z`);
+    const endOfMonth = new Date(new Date(startOfMonth).setMonth(startOfMonth.getMonth() + 1) - 1);
 
     const resultArray = []; // Array to store query results
 
     try {
-        // Loop through each day of the current week
-        for (let currentDay = new Date(startOfWeek); currentDay <= endOfWeek; currentDay.setDate(currentDay.getDate() + 1)) {
+        // Loop through each day within the specified month
+        for (let currentDay = new Date(startOfMonth); currentDay <= endOfMonth; currentDay.setDate(currentDay.getDate() + 1)) {
             const startOfDay = new Date(currentDay);
             const endOfDay = new Date(currentDay);
             endOfDay.setHours(23, 59, 59);
@@ -355,32 +428,206 @@ app.get('/rooms_1day_week/:device_id', async (req, res) => {
             resultArray.push(rooms.length > 0 ? rooms[0] : null);
         }
 
+        // Lấy giá trị trước ngày đó sớm nhất
+        const startDateGetLastValue = startOfMonth.toISOString().replace(/\.\d{3}Z$/, 'Z');
+        const queryLastValueBeforeCurrentDate = { device_id: deviceId, time: { $lt: startDateGetLastValue } };
+        const lastValueBeforeCurrentDateResult = await mongoose.connection.db.collection('rooms')
+                                                                                        .find(queryLastValueBeforeCurrentDate)
+                                                                                        .sort({ time: -1 })
+                                                                                        .limit(1)
+                                                                                        .toArray();
+
+        const responseObj = {
+            lastValueBeforeCurrentDate: lastValueBeforeCurrentDateResult,
+            resultArray: resultArray
+        };
+
+        res.header('Access-Control-Allow-Origin', '*');
+        res.json(responseObj);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+//------------------------------------------------------
+//MỘT TUẦN, LẤY Ở CUỐI NGÀY
+// app.get('/rooms_1day_week/:device_id', async (req, res) => {
+//     const deviceId = req.params.device_id;
+
+//     const currentDate = new Date();
+//     const currentDay = currentDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+//     const startOfWeek = new Date(currentDate);
+//     startOfWeek.setDate(currentDate.getDate() - currentDay + (currentDay === 0 ? -6 : 1)); // Adjust to the start of the week (Monday)
+
+//     const endOfWeek = new Date(startOfWeek);
+//     endOfWeek.setDate(startOfWeek.getDate() + 6); // Set to the end of the week (Sunday)
+
+//     console.log("startOfWeek", startOfWeek.toISOString());
+//     console.log("endOfWeek", endOfWeek.toISOString());
+
+//     const resultArray = []; // Array to store query results
+
+//     try {
+//         // Loop through each day of the current week
+//         for (let currentDay = new Date(startOfWeek); currentDay <= endOfWeek; currentDay.setDate(currentDay.getDate() + 1)) {
+//             const startOfDay = new Date(currentDay);
+//             const endOfDay = new Date(currentDay);
+//             endOfDay.setHours(23, 59, 59);
+
+//             const query = {
+//                 device_id: deviceId,
+//                 time: { $gte: startOfDay.toISOString(), $lt: endOfDay.toISOString() }
+//             };
+
+//             const rooms = await mongoose.connection.db.collection('rooms').find(query).sort({ $natural: -1 }).limit(1).toArray();
+
+//             // Push either the last record or null to the result array
+//             resultArray.push(rooms.length > 0 ? rooms[0] : null);
+//         }
+
+
+//         res.header('Access-Control-Allow-Origin', '*');
+//         res.json(resultArray);
+//     } catch (error) {
+//         res.status(500).json({ error: error.message });
+//     }
+// });
+app.get('/rooms_1day_week/:device_id', async (req, res) => {
+    const deviceId = req.params.device_id;
+
+    // Set the timezone to Indochina Time (ICT)
+    const timezoneOffset = 7 * 60; // UTC+7
+    const currentDate = new Date(new Date().getTime() + timezoneOffset * 60 * 1000);
+
+    const currentDay = currentDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+    // Adjust to the start of the week (Monday) at 00:00:00.000Z
+    const startOfWeek = new Date(currentDate);
+    startOfWeek.setUTCHours(0, 0, 0, 0);
+    startOfWeek.setDate(currentDate.getDate() - currentDay + (currentDay === 0 ? -6 : 1));
+
+    // Set to the end of the week (Sunday) at 23:59:59.999Z
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setUTCHours(23, 59, 59, 999);
+    endOfWeek.setDate(endOfWeek.getDate() + 6 + (currentDay === 0 ? 1 : 0)); // Adjust for Sunday end
+
+    const resultArray = []; // Array to store query results
+
+    try {
+        // Loop through each day of the current week
+        for (let currentDay = new Date(startOfWeek); currentDay <= endOfWeek; currentDay.setDate(currentDay.getDate() + 1)) {
+            const startOfDay = new Date(currentDay);
+            const endOfDay = new Date(currentDay);
+            endOfDay.setUTCHours(23, 59, 59, 999);
+
+            const query = {
+                device_id: deviceId,
+                time: { $gte: startOfDay.toISOString(), $lt: endOfDay.toISOString() }
+            };
+
+            const rooms = await mongoose.connection.db.collection('rooms').find(query).sort({ $natural: -1 }).limit(1).toArray();
+
+            // Push either the last record or null to the result array
+            resultArray.push(rooms.length > 0 ? rooms[0] : null);
+        }
+
+        console.log("startOfWeek", startOfWeek.toISOString());
+        console.log("endOfWeek", endOfWeek.toISOString());
+
+        
+
         res.header('Access-Control-Allow-Origin', '*');
         res.json(resultArray);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
+//TEST
+app.get('/rooms_1day_week_test/:device_id', async (req, res) => {
+    const deviceId = req.params.device_id;
+
+    // Set the timezone to Indochina Time (ICT)
+    const timezoneOffset = 7 * 60; // UTC+7
+    const currentDate = new Date(new Date().getTime() + timezoneOffset * 60 * 1000);
+
+    const currentDay = currentDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+    // Adjust to the start of the week (Monday) at 00:00:00.000Z
+    const startOfWeek = new Date(currentDate);
+    startOfWeek.setUTCHours(0, 0, 0, 0);
+    startOfWeek.setDate(currentDate.getDate() - currentDay + (currentDay === 0 ? -6 : 1));
+
+    // Set to the end of the week (Sunday) at 23:59:59.999Z
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setUTCHours(23, 59, 59, 999);
+    endOfWeek.setDate(endOfWeek.getDate() + 6 + (currentDay === 0 ? 1 : 0)); // Adjust for Sunday end
+
+    const resultArray = []; // Array to store query results
+
+    try {
+        // Loop through each day of the current week
+        for (let currentDay = new Date(startOfWeek); currentDay <= endOfWeek; currentDay.setDate(currentDay.getDate() + 1)) {
+            const startOfDay = new Date(currentDay);
+            const endOfDay = new Date(currentDay);
+            endOfDay.setUTCHours(23, 59, 59, 999);
+
+            const query = {
+                device_id: deviceId,
+                time: { $gte: startOfDay.toISOString(), $lt: endOfDay.toISOString() }
+            };
+
+            const rooms = await mongoose.connection.db.collection('rooms').find(query).sort({ $natural: -1 }).limit(1).toArray();
+
+            // Push either the last record or null to the result array
+            resultArray.push(rooms.length > 0 ? rooms[0] : null);
+        }
+
+        console.log("startOfWeek", startOfWeek.toISOString());
+        console.log("endOfWeek", endOfWeek.toISOString());
+
+        // Lấy giá trị trước ngày đó sớm nhất
+        const startDateGetLastValue = startOfWeek.toISOString().replace(/\.\d{3}Z$/, 'Z');
+        const queryLastValueBeforeCurrentDate = { device_id: deviceId, time: { $lt: startDateGetLastValue } };
+        const lastValueBeforeCurrentDateResult = await mongoose.connection.db.collection('rooms')
+                                                                                        .find(queryLastValueBeforeCurrentDate)
+                                                                                        .sort({ time: -1 })
+                                                                                        .limit(1)
+                                                                                        .toArray();
+
+        const responseObj = {
+            lastValueBeforeCurrentDate: lastValueBeforeCurrentDateResult,
+            resultArray: resultArray
+        };
+
+        res.header('Access-Control-Allow-Origin', '*');
+        res.json(responseObj);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 
-// từng tháng một năm, lấy cuối tháng
+// -----------------------------------------------------------------
+//MỘT NĂM HIỆN TẠI, LẤY CUỐI THÁNG
 app.get('/rooms_1mon_year/:device_id', async (req, res) => {
     const deviceId = req.params.device_id;
 
     const currentDate = new Date();
-    const resultArray = []; 
+    const resultArray = [];
 
     try {
         // Loop through each month of the current year
         for (let currentMonth = 0; currentMonth < 12; currentMonth++) {
-            const startOfMonth = new Date(currentDate.getFullYear(), currentMonth, 1);
-            const endOfMonth = new Date(currentDate.getFullYear(), currentMonth + 1, 0); // Last day of the current month
+            // Set the start of the month at 00:00:00.000Z
+            const startOfMonth = new Date(Date.UTC(currentDate.getUTCFullYear(), currentMonth, 1, 0, 0, 0, 0));
+
+            // Set the end of the month at 23:59:59.999Z
+            const endOfMonth = new Date(Date.UTC(currentDate.getUTCFullYear(), currentMonth + 1, 0, 23, 59, 59, 999));
 
             const query = {
                 device_id: deviceId,
                 time: { $gte: startOfMonth.toISOString(), $lt: endOfMonth.toISOString() }
             };
-
             const rooms = await mongoose.connection.db.collection('rooms').find(query).sort({ $natural: -1 }).limit(1).toArray();
 
             // Push either the last record or null to the result array
@@ -393,8 +640,65 @@ app.get('/rooms_1mon_year/:device_id', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+//TEST
+app.get('/rooms_1mon_year_test/:device_id', async (req, res) => {
+    const deviceId = req.params.device_id;
+
+    const currentDate = new Date();
+    const resultArray = [];
+
+    try {
+        // Loop through each month of the current year
+        for (let currentMonth = 0; currentMonth < 12; currentMonth++) {
+            // Set the start of the month at 00:00:00.000Z
+            const startOfMonth = new Date(Date.UTC(currentDate.getUTCFullYear(), currentMonth, 1, 0, 0, 0, 0));
+
+            // Set the end of the month at 23:59:59.999Z
+            const endOfMonth = new Date(Date.UTC(currentDate.getUTCFullYear(), currentMonth + 1, 0, 23, 59, 59, 999));
+
+            // console.log("startOfMonth", startOfMonth.toISOString());
+            // console.log("endOfMonth", endOfMonth.toISOString());
+
+            const query = {
+                device_id: deviceId,
+                time: { $gte: startOfMonth.toISOString(), $lt: endOfMonth.toISOString() }
+            };
+            const rooms = await mongoose.connection.db.collection('rooms').find(query).sort({ $natural: -1 }).limit(1).toArray();
+
+            // Push either the last record or null to the result array
+            resultArray.push(rooms.length > 0 ? rooms[0] : null);
+        }
+
+        const currentMonth1 = 0;
+        const startOfMonth = new Date(Date.UTC(currentDate.getUTCFullYear(), currentMonth1, 1, 0, 0, 0, 0));
+
+        console.log("startOfMonth", startOfMonth.toISOString());
+
+        // Lấy giá trị trước ngày đó sớm nhất
+        const startDateGetLastValue = startOfMonth.toISOString().replace(/\.\d{3}Z$/, 'Z');
+        const queryLastValueBeforeCurrentDate = { device_id: deviceId, time: { $lt: startDateGetLastValue } };
+        const lastValueBeforeCurrentDateResult = await mongoose.connection.db.collection('rooms')
+                                                                                        .find(queryLastValueBeforeCurrentDate)
+                                                                                        .sort({ time: -1 })
+                                                                                        .limit(1)
+                                                                                        .toArray();
+
+        const responseObj = {
+            lastValueBeforeCurrentDate: lastValueBeforeCurrentDateResult,
+            resultArray: resultArray
+        };
+
+        res.header('Access-Control-Allow-Origin', '*');
+        res.json(responseObj);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 
+//---------------------------------------------------------------------------
+
+//CẦN NGHIÊN CỨU CÁI NÀY
 // ngày tới ngày, từng ngày
 app.get('/rooms_day_to_day/:device_id/:start_date/:end_date', async (req, res) => {
     const deviceId = req.params.device_id;
