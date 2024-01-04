@@ -41,6 +41,8 @@ export default function SignUp() {
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [idRoom, setIdRoom] = useState('');
+  const [error, setError] = useState(null);
+
 
   const signUp = (e) => {
     e.preventDefault();
@@ -79,6 +81,7 @@ export default function SignUp() {
         const errorCode = error.code;
         const errorMessage = error.message;
         console.log(errorCode, errorMessage);
+        setError(error.message);
       });
   };
 
@@ -238,6 +241,11 @@ export default function SignUp() {
                 />
               </Grid> */}
             </Grid>
+            {error && (
+              <Typography variant="body2" color="error" gutterBottom>
+                {error}
+              </Typography>
+            )}
             <Button
               type="submit"
               fullWidth

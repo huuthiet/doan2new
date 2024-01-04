@@ -149,17 +149,17 @@ const fetchData = async (idRoom, startDate, endDate, rangeTime) => {
 
   if (rangeTime === 0) {
     //ngày
-   apiUrl = `http://localhost:3000/rooms_1hour/${deviceId}`;  
+   apiUrl = `http://localhost:3000/rooms_1hour_test/${deviceId}`;  
   } else if (rangeTime === 1) {
     //tuần
-   apiUrl = `http://localhost:3000/rooms_1day_week/${deviceId}`;  
+   apiUrl = `http://localhost:3000/rooms_1day_week_test/${deviceId}`;  
   } else if (rangeTime === 2) {
     //tháng
    apiUrl = `http://localhost:3000/rooms_1day_test/${deviceId}/${currentYear}/${currentMonth}`;  
   // apiUrl = `http://localhost:3000/rooms_1day_test/${deviceId}/2024/1`;  
   } else if (rangeTime === 3) {
     //năm
-   apiUrl = `http://localhost:3000/rooms_1mon_year/${deviceId}`;  
+   apiUrl = `http://localhost:3000/rooms_1mon_year_test/${deviceId}`;  
   } else if (rangeTime === 4) {
     //tất cả -> CHƯA LÀM
     apiUrl = `http://localhost:3000/rooms_1day/${deviceId}/${currentMonth}`;  
@@ -194,6 +194,31 @@ useEffect(() => {
 }, [rangeTime]);
 
 //------------------------------
+
+const [energyUsed, setEnergyUsed] = useState(0);
+const getTotalEnergy = async (idRoom) => {
+  const apiUrl = `http://localhost:3000/rooms_mon_energy_used/${idRoom}`
+  try {
+    const response = await axios.get(apiUrl);
+    console.log(response.data);
+
+    const result = response.data;
+
+    setEnergyUsed(result.latestDataCurrentMonth.energy - result.oldestDataPreviousMonth.energy)
+    
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+}
+
+useEffect(() => {
+  getTotalEnergy(idRoom);
+}, [idRoom])
+
+const formattedMoney = new Intl.NumberFormat('vi-VN', {
+  style: 'currency',
+  currency: 'VND',
+}).format(energyUsed*2500);
 
 
   //-----------------------real time--------------------------
@@ -311,18 +336,39 @@ useEffect(() => {
   // }, []);
 
   //-------------------------
+
+  //--------TÍNH TIỀNn THÁNG HIỆN TẠI-------------
+  const [oldestDataPreviousMonth, setOldestDataPreviousMonth] =  useState(0);
+  const [latestDataCurrentMonth, setLatestDataCurrentMonth] =  useState(0);
+
+  const fetchDataToPrice = async (idRoom) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/rooms_mon_price/${idRoom}`);
+      setDataLineChart(response.data);
+  
+      console.log(response.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+    const response = axios.get();
+  }
+
+
+  useEffect(() => {
+
+  }, [])
+
   
 
 
   return (
-    
     // className='container-fluid'
     <div >
     <br/>
     <PaperWrapper>
         <Grid container justifyContent="center">
           <Grid item lg={8} md={8} sm={12} xs={12} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ textAlign: 'center' }}>
+            {/* <div style={{ textAlign: 'center' }}>
               <label htmlFor="startdate">Từ ngày: </label>
               <input
                 type='date'
@@ -342,7 +388,7 @@ useEffect(() => {
               <Button onClick={handleButtonFilter} variant="contained" color="primary">
                 Lọc
               </Button>
-            </div>
+            </div> */}
             {showAlert && (
                   <Alert severity="error">
                     Vui lòng nhập ngày phía sau lớn hơn ngày trước!
@@ -365,7 +411,7 @@ useEffect(() => {
                       <Tab label="1 Tuần" />
                       <Tab label="1 Tháng" />
                       <Tab label="1 Năm" />
-                      <Tab label="Tất cả" />
+                      {/* <Tab label="Tất cả" /> */}
                     </Tabs>
                   </Box>
                 </div>
@@ -380,33 +426,35 @@ useEffect(() => {
               <Grid
                 item
                 container
-                lg={5}
-                md={5}
-                sm={10}
-                xs={11}
+                lg={4}
+                md={4}
+                sm={12}
+                xs={12}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   maxWidth: '100%',
                   height: '400px',
+                  marginTop: '30px',
+                  marginLeft:'20px'
                 }}
                 spacing={2}
               >
                 <Grid item container spacing={2}>
-                  <Grid item lg={6} md={6} sm={4} xs={11}>
+                  <Grid item lg={6} md={6} sm={5} xs={5}>
                     <CardView title="Dòng điện (A)" value={roomData.electric} unit="" />
                   </Grid>
-                  <Grid item lg={6} md={6} sm={4} xs={11}>
+                  <Grid item lg={6} md={6} sm={5} xs={5}>
                     <CardView title="Điện áp (V)" value={roomData.volt} unit="" />
                   </Grid>
                 </Grid>
 
                 <Grid item container spacing={2}>
-                  <Grid item lg={6} md={6} sm={4} xs={11}>
+                  <Grid item lg={6} md={6} sm={5} xs={5}>
                     <CardView title="Công suất (Wh)" value={roomData.power} unit="" />
                   </Grid>
-                  <Grid item lg={6} md={6} sm={4} xs={11}>
+                  <Grid item lg={6} md={6} sm={5} xs={5}>
                     <CardView title="Năng lượng (KW)" value={roomData.energy} unit="" />
                   </Grid>
                 </Grid>
@@ -415,7 +463,7 @@ useEffect(() => {
 
             <Alert severity="info">
               <AlertTitle>Tiền điện tháng {currentMonth}</AlertTitle>
-              Tổng: <strong>1000</strong> VNĐ
+              Tổng: <strong>{formattedMoney}</strong>
             </Alert>
             </PaperWrapper>
     </div>

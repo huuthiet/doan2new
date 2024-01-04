@@ -101,7 +101,7 @@ const ManagerEnergy = props => {
                   component="img"
                   alt="green iguana"
                   height="140"
-                  image="https://hoanghamobile.com/tin-tuc/wp-content/uploads/2023/08/cuc-dep-hinh-nen-thien-nhien.jpg"
+                  image="../../../public/images/metter.jpg"
                 />
                 <CardContent>
                   <Typography gutterBottom variant="h5" component="div">

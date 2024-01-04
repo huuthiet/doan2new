@@ -67,6 +67,8 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
+
 
   const user = useSelector(state => state.user);
   // console.log("user in login", user);
@@ -87,14 +89,12 @@ export default function Login() {
       if (userInfor !== null) {
         dispatch(signInSuccess(userInfor));
   
-        navigate("/home");
-  
-        console.log('current user', userInfor);
-        console.log('userrrr', user)
+        navigate("/");
       }
     } catch (error) {
       console.log(error);
       dispatch(signInFailure(error));
+      setError("Sai mật khẩu hoặc tài khoản");
     }
   };
 
@@ -160,6 +160,11 @@ export default function Login() {
               autoComplete="current-password"
               onChange={(e) => setPassword(e.target.value)}
             />
+            {error && (
+              <Typography variant="body2" color="error" gutterBottom>
+                {error}
+              </Typography>
+            )}
             <FormControlLabel
               control={<Checkbox value="remember" color="primary" />}
               label="Remember me"

@@ -4,8 +4,8 @@ import express from 'express';
 import cors from 'cors';
 import process from 'process';
 import dotenv from 'dotenv';
-// import moment from 'moment-timezone';
-import moment from 'moment';
+import moment from 'moment-timezone';
+// import moment from 'moment';
 
 dotenv.config();
 // const uri = process.env.MONGODB;
@@ -111,7 +111,7 @@ app.get('/rooms_1hour/:device_id', async (req, res) => {
     var formattedDate = `${dateArray[4]}-${dateArray[0]}-${dateArray[2]}`;
 
 
-    console.log("formattedDate", formattedDate);
+    // console.log("formattedDate", formattedDate);
 
     const startOfDay = new Date(`${formattedDate}T00:00:00Z`); // Bắt đầu từ 00h00
     const endOfDay = new Date(`${formattedDate}T23:59:59Z`); // Kết thúc lúc 23h59
@@ -148,7 +148,7 @@ app.get('/rooms_1hour/:device_id', async (req, res) => {
 
         res.header('Access-Control-Allow-Origin', '*');
         res.json(resultArray);
-        console.log(resultArray)
+        // console.log(resultArray)
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -174,7 +174,7 @@ app.get('/rooms_1hour_test/:device_id', async (req, res) => {
     // Xây dựng chuỗi theo định dạng năm-tháng-ngày
     var formattedDate = `${dateArray[4]}-${dateArray[0]}-${dateArray[2]}`;
 
-    console.log("formattedDate", formattedDate);
+    // console.log("formattedDate", formattedDate);
 
     const startOfDay = new Date(`${formattedDate}T00:00:00Z`); // Bắt đầu từ 00h00
     const endOfDay = new Date(`${formattedDate}T23:59:59Z`); // Kết thúc lúc 23h59
@@ -531,8 +531,8 @@ app.get('/rooms_1day_week/:device_id', async (req, res) => {
             resultArray.push(rooms.length > 0 ? rooms[0] : null);
         }
 
-        console.log("startOfWeek", startOfWeek.toISOString());
-        console.log("endOfWeek", endOfWeek.toISOString());
+        // console.log("startOfWeek", startOfWeek.toISOString());
+        // console.log("endOfWeek", endOfWeek.toISOString());
 
         
 
@@ -582,8 +582,8 @@ app.get('/rooms_1day_week_test/:device_id', async (req, res) => {
             resultArray.push(rooms.length > 0 ? rooms[0] : null);
         }
 
-        console.log("startOfWeek", startOfWeek.toISOString());
-        console.log("endOfWeek", endOfWeek.toISOString());
+        // console.log("startOfWeek", startOfWeek.toISOString());
+        // console.log("endOfWeek", endOfWeek.toISOString());
 
         // Lấy giá trị trước ngày đó sớm nhất
         const startDateGetLastValue = startOfWeek.toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -672,7 +672,7 @@ app.get('/rooms_1mon_year_test/:device_id', async (req, res) => {
         const currentMonth1 = 0;
         const startOfMonth = new Date(Date.UTC(currentDate.getUTCFullYear(), currentMonth1, 1, 0, 0, 0, 0));
 
-        console.log("startOfMonth", startOfMonth.toISOString());
+        // console.log("startOfMonth", startOfMonth.toISOString());
 
         // Lấy giá trị trước ngày đó sớm nhất
         const startDateGetLastValue = startOfMonth.toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -811,8 +811,8 @@ app.get('/rooms/:device_id/:start_date/:end_date', async (req, res) => {
     const startOfDay = new Date(`${startDate}T10:25:00Z`);
     const endOfDay = new Date(`${endDate}T10:30:59Z`);
 
-    console.log('startDate', startOfDay.toISOString().replace(/\.\d{3}Z$/, 'Z'));
-    console.log('endDate', endOfDay.toISOString().replace(/\.\d{3}Z$/, 'Z'));
+    // console.log('startDate', startOfDay.toISOString().replace(/\.\d{3}Z$/, 'Z'));
+    // console.log('endDate', endOfDay.toISOString().replace(/\.\d{3}Z$/, 'Z'));
 
     const startOfDay1 = startOfDay.toISOString().replace(/\.\d{3}Z$/, 'Z');
     const endOfDay1 = endOfDay.toISOString().replace(/\.\d{3}Z$/, 'Z')
@@ -836,6 +836,110 @@ app.get('/rooms/:device_id/:start_date/:end_date', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+
+
+// TÍNH TIỀN THÁNG HIỆN TẠI: 
+// Trả về giá trị mới nhất tháng hiện tại và giá trị cũ nhất của tháng trước đo
+app.get('/rooms_mon_price/:device_id', async (req, res) => {
+    const deviceId = req.params.device_id;
+
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth(); // Lấy tháng hiện tại (0-11)
+
+    try {
+        // Lấy số liệu mới nhất của tháng hiện tại
+        const startOfCurrentMonth = new Date(currentDate.getFullYear(), currentMonth, 1, 0, 0, 0, 0);
+        const endOfCurrentMonth = new Date(currentDate.getFullYear(), currentMonth + 1, 0, 23, 59, 59, 999);
+        const queryCurrentMonth = {
+            device_id: deviceId,
+            time: { $gte: startOfCurrentMonth.toISOString(), $lt: endOfCurrentMonth.toISOString() }
+        };
+        const latestDataCurrentMonth = await mongoose.connection.db.collection('rooms')
+            .find(queryCurrentMonth)
+            .sort({ time: -1 })
+            .limit(1)
+            .toArray();
+
+        // Lấy số liệu cũ nhất của tháng trước đó
+        const startOfPreviousMonth = new Date(currentDate.getFullYear(), currentMonth - 1, 1, 0, 0, 0, 0);
+        const endOfPreviousMonth = new Date(currentDate.getFullYear(), currentMonth, 0, 23, 59, 59, 999);
+        const queryPreviousMonth = {
+            device_id: deviceId,
+            time: { $gte: startOfPreviousMonth.toISOString(), $lt: endOfPreviousMonth.toISOString() }
+        };
+        const oldestDataPreviousMonth = await mongoose.connection.db.collection('rooms')
+            .find(queryPreviousMonth)
+            .sort({ time: 1 })
+            .limit(1)
+            .toArray();
+
+        const responseObj = {
+            latestDataCurrentMonth: latestDataCurrentMonth.length > 0 ? latestDataCurrentMonth[0] : null,
+            oldestDataPreviousMonth: oldestDataPreviousMonth.length > 0 ? oldestDataPreviousMonth[0] : null
+        };
+
+        res.header('Access-Control-Allow-Origin', '*');
+        res.json(responseObj);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Lấy lượng điện tiêu thụ đến thới điểm hiện tại
+
+
+app.get('/rooms_mon_energy_used/:device_id', async (req, res) => {
+    const deviceId = req.params.device_id;
+
+    const timeZone = 'Asia/Ho_Chi_Minh';
+
+    try {
+        const currentDate = moment().tz(timeZone);
+        const currentMonth = currentDate.month(); // Lấy tháng hiện tại (0-11)
+
+        // Lấy số liệu mới nhất của tháng hiện tại
+        const startOfCurrentMonth = currentDate.clone().startOf('month').startOf('day');
+        const endOfCurrentMonth = currentDate.clone().endOf('month').startOf('day').add(1, 'second'); // thêm 1 giây
+        // console.log("startOfCurrentMonth.toISOString()", startOfCurrentMonth.toISOString())
+        // console.log("endOfCurrentMonth.toISOString()", endOfCurrentMonth.toISOString())
+        const queryCurrentMonth = {
+            device_id: deviceId,
+            time: { $gte: startOfCurrentMonth.toISOString(), $lt: endOfCurrentMonth.toISOString() }
+        };
+        const latestDataCurrentMonth = await mongoose.connection.db.collection('rooms')
+            .find(queryCurrentMonth)
+            .sort({ time: -1 })
+            .limit(1)
+            .toArray();
+
+        // Lấy số liệu cũ nhất của tháng trước đó
+        const startOfPreviousMonth = currentDate.clone().subtract(1, 'months').startOf('month').startOf('day');
+        const endOfPreviousMonth = currentDate.clone().startOf('month').startOf('day'); // 00:00:00 của ngày đầu tiên của tháng hiện tại
+        const queryPreviousMonth = {
+            device_id: deviceId,
+            time: { $gte: startOfPreviousMonth.toISOString(), $lt: endOfPreviousMonth.toISOString() }
+        };
+        const oldestDataPreviousMonth = await mongoose.connection.db.collection('rooms')
+            .find(queryPreviousMonth)
+            .sort({ time: 1 })
+            .limit(1)
+            .toArray();
+
+        const responseObj = {
+            latestDataCurrentMonth: latestDataCurrentMonth.length > 0 ? latestDataCurrentMonth[0] : null,
+            oldestDataPreviousMonth: oldestDataPreviousMonth.length > 0 ? oldestDataPreviousMonth[0] : null
+        };
+
+        res.header('Access-Control-Allow-Origin', '*');
+        res.json(responseObj);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+
 
 
 

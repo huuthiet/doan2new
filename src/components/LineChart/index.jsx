@@ -113,29 +113,39 @@ const LineChart = ({externalData, timeRange} ) => {
   
   let lastValueBefore = 0;
   let lastValueArr = [];
-  lastValueArr = externalData.lastValueBeforeCurrentDate;
+  let finalEnergyArr = [];
+  
   console.log("externalData.lastValueBeforeCurrentDate", lastValueArr);
 
-  if (Array.isArray(lastValueArr) && lastValueArr.length === 0) {
-    lastValueBefore = 0;
-  } else {
-    lastValueBefore = lastValueArr[0].energy;
-  }
-  const initialArr = externalData.resultArray;
-  const energyArr = initialArr.map(item => (item !== null ? item.energy : null));
+  if (externalData !== undefined) {
+    if (externalData.lastValueBeforeCurrentDate !== undefined) {
+      lastValueArr = externalData.lastValueBeforeCurrentDate;
 
-  let finalEnergyArr = [];
-  for (let i = 0; i < energyArr.length; i++) {
-    if (energyArr[i] === null) {
-      finalEnergyArr.push(null);
-    } else {
-      let result = energyArr[i] - lastValueBefore;
-      finalEnergyArr.push(result);
-      lastValueBefore = energyArr[i];
+      if (Array.isArray(lastValueArr) && lastValueArr.length === 0) {
+        lastValueBefore = 0;
+      } else {
+        lastValueBefore = lastValueArr[0].energy;
+      }
+  
+      const initialArr = externalData.resultArray;
+    const energyArr = initialArr.map(item => (item !== null ? item.energy : null));
+  
+    
+    for (let i = 0; i < energyArr.length; i++) {
+      if (energyArr[i] === null) {
+        finalEnergyArr.push(null);
+      } else {
+        let result = energyArr[i] - lastValueBefore;
+        finalEnergyArr.push(result);
+        lastValueBefore = energyArr[i];
+      }
+    }
+  
+    console.log("finalEnergyArr", finalEnergyArr);
     }
   }
-
-  console.log("finalEnergyArr", finalEnergyArr);
+  
+  
 
 
   // console.log("timeRange", timeRange);
@@ -152,9 +162,9 @@ const LineChart = ({externalData, timeRange} ) => {
     const data = {
     labels: labels,
     datasets: [{
-        label: 'Manager Energy',
-        data: [65, 59, 80 - null, null, null, 55, 40],
-        // data: finalEnergyArr,
+        label: 'Manager Energy (kWh)',
+        // data: [65, 59, 80 - null, null, null, 55, 40],
+        data: finalEnergyArr,
         fill: false,
         borderColor: 'rgb(75, 192, 192)',
         tension: 0.1
@@ -173,6 +183,16 @@ const LineChart = ({externalData, timeRange} ) => {
                 },
                 y: {
                     beginAtZero: true,
+                    title: {
+                      display: true,
+                      text: 'Energy (kWh)' // Tiêu đề cho trục y
+                    },
+                    // ticks: {
+                    //   // Đơn vị cho trục y
+                    //   callback: function (value, index, values) {
+                    //     return value + ' kWh';
+                    //   }
+                    // }
                 },
             },
             plugins: {

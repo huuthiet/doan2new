@@ -1,0 +1,93 @@
+.App {
+    text-align: center;
+  }
+
+  /* .App-title {
+    text-align: center;
+  } */
+  
+  .buttons-container {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+  }
+
+  .home-title{
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+  }
+  
+  button {
+    display: flex;
+    flex-direction: row;
+    margin: 5px;
+    align-items: center;
+    margin-bottom: 10px;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    outline: none;
+  }
+
+  button:hover{
+    background-color: gray;
+    transition: 0.3s;
+  }
+  
+  button.active {
+    background-color: #4caf50;
+    color: white;
+  }
+  
+  .content {
+    display: none;
+    margin-top: 10px;
+  }
+  
+  .content.active {
+    display: block;
+  }
+
+  .container {
+    margin: auto;
+    width: 80%; /* Hoặc kích thước phù hợp với thiết kế của bạn */
+  }
+
+  .button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+
+  .tabs-container {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .tabpanel-container {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .tabpanel-content {
+    text-align: center;
+    margin: auto; 
+    max-width: 600px; 
+  }
+
+  .title-topic {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Các thuộc tính khác nếu cần */
+  }
+  
+  
+  
+  
+  

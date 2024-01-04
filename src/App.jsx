@@ -1,10 +1,11 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
 
 
 import Navbar from './components/navbar/Loadable';
 import Footer from './components/footer/Loadable';
 
+import Home from './containers/Home';
 import Login from './containers/Login/Loadable';
 import Register from './containers/Register/Loadable';
 import ManagerEnergy from './containers/ManagerEnergy/Loadable';
@@ -27,6 +28,7 @@ function App() {
        <Routes>
         <Route path='/login' element={<Login />}/>
         <Route path='/register' element={<Register />}/>
+        <Route path='/' element={<Home />}/>
 
         <Route element={<AdminRoute />}>
           <Route path='admin/manager-user' element={<ManagerUser />}/>

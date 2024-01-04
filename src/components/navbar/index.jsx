@@ -8,6 +8,7 @@ import {auth} from "../../firebase-config";
 
 import { useDispatch, useSelector } from 'react-redux';
 import { signOutUserFailure, signOutUserSuccess } from '../../redux/user/userSlice';
+import FlashOnIcon from '@mui/icons-material/FlashOn';
 
 
 import "./style.scss";
@@ -85,8 +86,8 @@ function Navbar() {
   return (
     <header className="header">
       <div className="header__content">
-        <Link to="/manager-user" className="header__content__logo">
-        Icon home
+        <Link to="/" className="header__content__logo" style={{marginLeft:'20px'}}>
+          <FlashOnIcon fontSize="large"/> 
         </Link>
         <nav
           className={`${"header__content__nav"} 
@@ -94,14 +95,14 @@ function Navbar() {
           }`}
         >
           <ul>
-            <li>
-              <Link to="/help">Help</Link>
-            </li>
             {authUser ? (
               <>
+              <li>
+                  <Link to="/">Home</Link>
+                </li>
                 {currentUser && currentUser.role === "admin" && (
                   <li>
-                    <Link to="admin/manager-energy">Energy</Link>
+                    <Link to="admin/manager-energy">Manage Energy</Link>
                   </li>
                 )}
                 {currentUser && currentUser.role === "user" && (
@@ -110,10 +111,6 @@ function Navbar() {
                   </li>
                 )}
                 <li>
-                  <Link to="/">Home</Link>
-                </li>
-
-                <li>
                   <Link to="/profile">Profile</Link>
                 </li>
                 <li>
@@ -121,9 +118,16 @@ function Navbar() {
                 </li>
               </>
               ) : (
+                <>
+                <ul>
+                  <li>
+                    <Link to="/">Home</Link>
+                  </li>
+                </ul>
                 <Link to="/login">
                   <button className="btn">Login</button>
                 </Link>
+                </>
               )}
             
           </ul>
